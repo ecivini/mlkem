@@ -1,3 +1,5 @@
+use crate::constants::{Q, D};
+
 /// Converts a vector of bits into a vector of bytes (assumes little endian)
 /// 
 /// # Arguments
@@ -46,6 +48,24 @@ pub fn bytes_to_bits(bytes: Vec<u8>) -> Vec<u8> {
 
   bits
 }
+
+/// Reduce an element into Z_q in constant time
+/// 
+/// # Arguments
+/// - e: element to reduce
+/// 
+/// 
+/// # Return value
+/// Reduced element
+/// 
+/// Taken from Filippo Valsorda' implementation
+/// https://github.com/FiloSottile/mlkem768/blob/main/mlkem768.go#L360
+pub fn field_reduce(e: u16) -> u16 {
+  let we = e.wrapping_sub(Q);
+  
+  we.wrapping_add((we >> 15).wrapping_mul(Q))
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
