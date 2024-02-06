@@ -3,7 +3,7 @@ use crate::constants::{Q, D};
 /// Converts a vector of bits into a vector of bytes (assumes little endian)
 /// 
 /// # Arguments
-/// - bits: vector of bits. Each element must be either 0 or 1
+/// bits: vector of bits. Each element must be either 0 or 1
 /// 
 /// # Return value
 /// Vector of the byte representation 
@@ -26,7 +26,7 @@ pub fn bits_to_bytes(bits: Vec<u8>) -> Option<Vec<u8>> {
 /// Converts a vector of bytes into a vector of bits (little endian)
 /// 
 /// # Arguments
-/// - bits: vector of bytes.
+/// bits: vector of bytes.
 /// 
 /// # Return value
 /// Vector of the bit representation 
@@ -51,15 +51,14 @@ pub fn bytes_to_bits(bytes: Vec<u8>) -> Vec<u8> {
 
 /// Reduce an element into Z_q in constant time
 /// 
-/// # Arguments
-/// - e: element to reduce
+/// Taken from Filippo Valsorda' implementation
+/// https://github.com/FiloSottile/mlkem768/blob/main/mlkem768.go#L360
 /// 
+/// # Arguments
+/// e: element to reduce
 /// 
 /// # Return value
 /// Reduced element
-/// 
-/// Taken from Filippo Valsorda' implementation
-/// https://github.com/FiloSottile/mlkem768/blob/main/mlkem768.go#L360
 pub fn field_reduce(e: u16) -> u16 {
   let we = e.wrapping_sub(Q);
   
@@ -71,7 +70,6 @@ pub fn field_reduce(e: u16) -> u16 {
 
 #[cfg(test)]
 mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
     #[test]
