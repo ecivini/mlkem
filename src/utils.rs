@@ -1,4 +1,4 @@
-use crate::constants::{Q, D};
+use crate::constants::{Q, N};
 
 /// Converts a vector of bits into a vector of bytes (assumes little endian)
 /// 
@@ -52,24 +52,53 @@ pub fn bytes_to_bits(bytes: Vec<u8>) -> Vec<u8> {
 /// Encodes an array of d-bit integers into a byte array
 /// 
 /// # Arguments
-/// d: Segment size (1 <= d <= 12). If d < 12, then m = 2^d. If d = 12, m = Q
 /// f: Integers modulo m array of length 256
+/// d: Segment size (1 <= d <= 12). If d < 12, then m = 2^d. If d = 12, m = Q
 /// 
 /// # Return value
 /// Encoded byte array of length 32 * d
-pub fn byte_encode(d: u8, f: Vec<u16>) -> Vec<u8> {
+pub fn byte_encode(f: &Vec<u16>, d: u8) -> Vec<u8> {
   let mut bits: Vec<u8> = vec![0; 256 * d as usize];
 
-  for i in 0..256 {
+  for i in 0..N {
     let mut a = f[i];
     for j in 0..d {
-      let index = (i as u8 * d + j) as usize;
-      bits[index] = a.rem_euclid(2) as u8;
+      println!("Encode: {} {}", i, j);
+      let index = i * d as usize + j as usize;
+      bits[index] = (a % 2) as u8;
       a = (a - bits[index] as u16) / 2;
     }
   }
 
   bits_to_bytes(bits).unwrap()
+}
+
+/// Decodes a byte array into an array of d-bit integers
+/// 
+/// Arguments
+/// b: Encoded byte array of length 32 * d
+/// d: Segment size (1 <= d <= 12). If d < 12, then m = 2^d. If d = 12, m = Q
+/// 
+/// Return value
+/// Array of d-bit integers
+pub fn byte_decode(b: &Vec<u8>, d: u8) -> Vec<u16> {
+  let bits = bytes_to_bits(b.to_vec());
+  let mut integers: Vec<u16> = vec![0; N];
+
+  let mut modulo = Q;
+  if d < 12 {
+    modulo = 2_u16.pow(d.into());
+  }
+
+  for i in 0..N {
+    for j in 0..d {
+      println!("Decode: {} {}", i, j);
+      let index = i * d as usize + j as usize;
+      integers[i] = (integers[i] + (bits[index] as u16) << j) % modulo;
+    }
+  }
+
+  integers
 }
 
 /// Reduce an element into Z_q in constant time
@@ -93,27 +122,27 @@ pub fn field_reduce(e: u16) -> u16 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+  use super::*;
 
-    #[test]
-    fn test_bits_to_bytes() {
-      // Fail
-      let mut bits = vec![1, 0, 1, 0];
-      let mut output = bits_to_bytes(bits);
-      assert_eq!(output.is_none(), true);
+  #[test]
+  fn test_bits_to_bytes() {
+    // Fail
+    let mut bits = vec![1, 0, 1, 0];
+    let mut output = bits_to_bytes(bits);
+    assert_eq!(output.is_none(), true);
 
-      // Success
-      bits = vec![1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0];
-      output = bits_to_bytes(bits);
+    // Success
+    bits = vec![1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0];
+    output = bits_to_bytes(bits);
 
-      assert_eq!(output.unwrap(), vec![129, 3]);
-    }
+    assert_eq!(output.unwrap(), vec![129, 3]);
+  }
 
-    #[test]
-    fn test_bytes_to_bits() {
-      let bytes: Vec<u8> = vec![125, 27, 88];
-      let output = bytes_to_bits(bytes);
+  #[test]
+  fn test_bytes_to_bits() {
+    let bytes: Vec<u8> = vec![125, 27, 88];
+    let output = bytes_to_bits(bytes);
 
-      assert_eq!(output, vec![1, 0, 1, 1, 1, 1, 1, 0,   1, 1, 0, 1, 1, 0, 0, 0,   0, 0, 0, 1, 1, 0, 1, 0])
-    }
+    assert_eq!(output, vec![1, 0, 1, 1, 1, 1, 1, 0,   1, 1, 0, 1, 1, 0, 0, 0,   0, 0, 0, 1, 1, 0, 1, 0])
+  }
 }
