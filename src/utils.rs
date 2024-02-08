@@ -1,5 +1,11 @@
 use crate::constants::{Q, N};
 
+/// Element in Z_q. Since q = 3329 < 2^16, 16 bits are enough
+type FieldElement = u16;
+
+/// Polynomial in R_q
+type RingElement = [FieldElement; N]; 
+
 /// Converts a vector of bits into a vector of bytes (assumes little endian)
 /// 
 /// # Arguments
@@ -30,7 +36,7 @@ pub fn bits_to_bytes(bits: Vec<u8>) -> Option<Vec<u8>> {
 /// 
 /// # Return value
 /// Vector of the bit representation 
-pub fn bytes_to_bits(bytes: Vec<u8>) -> Vec<u8> {
+pub fn bytes_to_bits(bytes: Vec<u8>) -> Option<Vec<u8>> {
   let bits_length = bytes.len() * 8;
   let mut bits = vec![0; bits_length];
 
@@ -46,7 +52,7 @@ pub fn bytes_to_bits(bytes: Vec<u8>) -> Vec<u8> {
     bits[base + 7] = (byte & 0b10000000) >> 7;
   }
 
-  bits
+  Some(bits)
 }
 
 /// Encodes an array of d-bit integers into a byte array
@@ -57,7 +63,7 @@ pub fn bytes_to_bits(bytes: Vec<u8>) -> Vec<u8> {
 /// 
 /// # Return value
 /// Encoded byte array of length 32 * d
-pub fn byte_encode(f: &Vec<u16>, d: u8) -> Vec<u8> {
+pub fn byte_encode(f: &Vec<u16>, d: u8) -> Option<Vec<u8>> {
   let mut bits: Vec<u8> = vec![0; 256 * d as usize];
 
   for i in 0..N {
@@ -70,7 +76,7 @@ pub fn byte_encode(f: &Vec<u16>, d: u8) -> Vec<u8> {
     }
   }
 
-  bits_to_bytes(bits).unwrap()
+  bits_to_bytes(bits)
 }
 
 /// Decodes a byte array into an array of d-bit integers
@@ -81,8 +87,8 @@ pub fn byte_encode(f: &Vec<u16>, d: u8) -> Vec<u8> {
 /// 
 /// Return value
 /// Array of d-bit integers
-pub fn byte_decode(b: &Vec<u8>, d: u8) -> Vec<u16> {
-  let bits = bytes_to_bits(b.to_vec());
+pub fn byte_decode(b: &Vec<u8>, d: u8) -> Option<Vec<u16>> {
+  let bits = bytes_to_bits(b.to_vec()).unwrap();
   let mut integers: Vec<u16> = vec![0; N];
 
   let mut modulo = Q;
@@ -98,7 +104,7 @@ pub fn byte_decode(b: &Vec<u8>, d: u8) -> Vec<u16> {
     }
   }
 
-  integers
+  Some(integers)
 }
 
 /// Reduce an element into Z_q in constant time
@@ -141,7 +147,7 @@ mod tests {
   #[test]
   fn test_bytes_to_bits() {
     let bytes: Vec<u8> = vec![125, 27, 88];
-    let output = bytes_to_bits(bytes);
+    let output = bytes_to_bits(bytes).unwrap();
 
     assert_eq!(output, vec![1, 0, 1, 1, 1, 1, 1, 0,   1, 1, 0, 1, 1, 0, 0, 0,   0, 0, 0, 1, 1, 0, 1, 0])
   }
