@@ -49,6 +49,29 @@ pub fn bytes_to_bits(bytes: Vec<u8>) -> Vec<u8> {
   bits
 }
 
+/// Encodes an array of d-bit integers into a byte array
+/// 
+/// # Arguments
+/// d: Segment size (1 <= d <= 12). If d < 12, then m = 2^d. If d = 12, m = Q
+/// f: Integers modulo m array of length 256
+/// 
+/// # Return value
+/// Encoded byte array of length 32 * d
+pub fn byte_encode(d: u8, f: Vec<u16>) -> Vec<u8> {
+  let mut bits: Vec<u8> = vec![0; 256 * d as usize];
+
+  for i in 0..256 {
+    let mut a = f[i];
+    for j in 0..d {
+      let index = (i as u8 * d + j) as usize;
+      bits[index] = a.rem_euclid(2) as u8;
+      a = (a - bits[index] as u16) / 2;
+    }
+  }
+
+  bits_to_bytes(bits).unwrap()
+}
+
 /// Reduce an element into Z_q in constant time
 /// 
 /// Taken from Filippo Valsorda' implementation
