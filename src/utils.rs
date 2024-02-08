@@ -63,16 +63,15 @@ pub fn bytes_to_bits(bytes: Vec<u8>) -> Option<Vec<u8>> {
 /// 
 /// # Return value
 /// Encoded byte array of length 32 * d
-pub fn byte_encode(f: &Vec<u16>, d: u8) -> Option<Vec<u8>> {
+pub fn byte_encode(f: &RingElement, d: u8) -> Option<Vec<u8>> {
   let mut bits: Vec<u8> = vec![0; 256 * d as usize];
 
   for i in 0..N {
     let mut a = f[i];
     for j in 0..d {
-      println!("Encode: {} {}", i, j);
       let index = i * d as usize + j as usize;
-      bits[index] = (a % 2) as u8;
-      a = (a - bits[index] as u16) / 2;
+      bits[index] = (a & 0b1) as u8;
+      a = a >> 1;
     }
   }
 
@@ -87,9 +86,9 @@ pub fn byte_encode(f: &Vec<u16>, d: u8) -> Option<Vec<u8>> {
 /// 
 /// Return value
 /// Array of d-bit integers
-pub fn byte_decode(b: &Vec<u8>, d: u8) -> Option<Vec<u16>> {
+pub fn byte_decode(b: &Vec<u8>, d: u8) -> Option<RingElement> {
   let bits = bytes_to_bits(b.to_vec()).unwrap();
-  let mut integers: Vec<u16> = vec![0; N];
+  let mut integers: RingElement = [0; N];
 
   let mut modulo = Q;
   if d < 12 {
@@ -98,10 +97,10 @@ pub fn byte_decode(b: &Vec<u8>, d: u8) -> Option<Vec<u16>> {
 
   for i in 0..N {
     for j in 0..d {
-      println!("Decode: {} {}", i, j);
       let index = i * d as usize + j as usize;
-      integers[i] = (integers[i] + (bits[index] as u16) << j) % modulo;
+      integers[i] += (bits[index] as u16) << j;
     }
+    integers[i] %= modulo;
   }
 
   Some(integers)
@@ -150,5 +149,17 @@ mod tests {
     let output = bytes_to_bits(bytes).unwrap();
 
     assert_eq!(output, vec![1, 0, 1, 1, 1, 1, 1, 0,   1, 1, 0, 1, 1, 0, 0, 0,   0, 0, 0, 1, 1, 0, 1, 0])
+  }
+
+  #[test]
+  fn test_bytes_encode_decode_d12() {
+    let mut element: RingElement = [0; N];
+    for i in 0..N {
+      element[i] = i as FieldElement;
+    }
+
+    let output = byte_decode(&byte_encode(&element, 12).unwrap(), 12);
+
+    assert_eq!(output.unwrap(), element)
   }
 }
