@@ -1,4 +1,4 @@
-use crate::constants::{Q, N};
+use crate::constants::{Q, N, ZETAS};
 
 /// Element in Z_q. Since q = 3329 < 2^16, 16 bits are enough
 type FieldElement = u16;
@@ -13,7 +13,7 @@ type RingElement = [FieldElement; N];
 /// 
 /// # Return value
 /// Vector of the byte representation 
-pub fn bits_to_bytes(bits: Vec<u8>) -> Option<Vec<u8>> {
+fn bits_to_bytes(bits: Vec<u8>) -> Option<Vec<u8>> {
   let bits_length = bits.len();
   if bits_length % 8 != 0 {
     return None;
@@ -36,7 +36,7 @@ pub fn bits_to_bytes(bits: Vec<u8>) -> Option<Vec<u8>> {
 /// 
 /// # Return value
 /// Vector of the bit representation 
-pub fn bytes_to_bits(bytes: Vec<u8>) -> Option<Vec<u8>> {
+fn bytes_to_bits(bytes: Vec<u8>) -> Option<Vec<u8>> {
   let bits_length = bytes.len() * 8;
   let mut bits = vec![0; bits_length];
 
@@ -63,7 +63,7 @@ pub fn bytes_to_bits(bytes: Vec<u8>) -> Option<Vec<u8>> {
 /// 
 /// # Return value
 /// Encoded byte array of length 32 * d
-pub fn byte_encode(f: &RingElement, d: u8) -> Option<Vec<u8>> {
+fn byte_encode(f: &RingElement, d: u8) -> Option<Vec<u8>> {
   let mut bits: Vec<u8> = vec![0; 256 * d as usize];
 
   for i in 0..N {
@@ -86,7 +86,7 @@ pub fn byte_encode(f: &RingElement, d: u8) -> Option<Vec<u8>> {
 /// 
 /// Return value
 /// Array of d-bit integers
-pub fn byte_decode(b: &Vec<u8>, d: u8) -> Option<RingElement> {
+fn byte_decode(b: &Vec<u8>, d: u8) -> Option<RingElement> {
   let bits = bytes_to_bits(b.to_vec()).unwrap();
   let mut integers: RingElement = [0; N];
 
@@ -116,12 +116,119 @@ pub fn byte_decode(b: &Vec<u8>, d: u8) -> Option<RingElement> {
 /// 
 /// # Return value
 /// Reduced element
-pub fn field_reduce(e: u16) -> u16 {
+fn field_reduce(e: FieldElement) -> FieldElement {
   let we = e.wrapping_sub(Q);
   
   we.wrapping_add((we >> 15).wrapping_mul(Q))
 }
 
+/// Field multiplication
+/// 
+/// # Arguments
+/// a: first element in the field
+/// b: second element in the field
+/// 
+/// # Return value
+/// Product of a and b reduced in the field
+fn field_mul(a: FieldElement, b: FieldElement) -> FieldElement {
+  ((a as u32).wrapping_mul(b as u32) % Q as u32) as FieldElement
+}
+
+/// Field addition
+/// 
+/// # Arguments
+/// a: first element in the field
+/// b: second element in the field
+/// 
+/// # Return value
+/// Sum of a and b reduced in the field
+fn field_add(a: FieldElement, b: FieldElement) -> FieldElement {
+  field_reduce(a.wrapping_add(b))
+}
+
+/// Field subtraction
+/// 
+/// # Arguments
+/// a: first element in the field
+/// b: second element in the field
+/// 
+/// # Return value
+/// Difference of a and b reduced in the field
+fn field_sub(a: FieldElement, b: FieldElement) -> FieldElement {
+  field_reduce(a.wrapping_sub(b))
+}
+
+
+/// Computes the NTT of the given polynomial f
+/// 
+/// Arguments
+/// f: polynomial 
+/// 
+/// Return value
+/// NTT Representation of f
+fn ntt(f: RingElement) -> RingElement {
+  let mut f_hat = f.clone();
+  let mut k: usize = 1;
+  let mut len = 128;
+
+  while len >= 2 {
+    let mut start = 0;
+    while start < N {
+      let zeta = ZETAS[k];
+      println!("Index: {} {}", k, zeta);
+      k += 1;
+      
+      for j in start..(start + len) {
+        let t = field_mul(zeta, f_hat[j + len]);
+        f_hat[j + len] = field_sub(f_hat[j], t);
+        f_hat[j] = field_add(f_hat[j], t);
+      }
+
+      start += 2 * len;
+    }
+
+    len /= 2;
+  }
+
+  f_hat 
+}
+
+/// Computes the inverse NTT of the given polynomial f_hat
+/// 
+/// Arguments
+/// f_hat: NTT polynomial 
+/// 
+/// Return value
+/// Original Representation of f_hat
+pub fn inverse_ntt(f_hat: RingElement) -> RingElement {
+  let mut f = f_hat.clone();
+  let mut k: usize = 127;
+  let mut len = 2;
+
+  while len <= 128 {
+    let mut start = 0;
+    while start < N {
+      let zeta = ZETAS[k];
+      k -= 1;
+      
+      for j in start..(start + len) {
+        let t = f[j];
+        f[j] = field_add(t, f[j + len]);
+        f[j + len] = field_mul(zeta, field_sub(f[j + len], t));
+      }
+
+      start += 2 * len;
+    }
+
+    len *= 2;
+  }
+
+  for i in 0..N {
+    f[i] = field_mul(f[i], 3303);
+  }
+
+  f 
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -162,4 +269,14 @@ mod tests {
 
     assert_eq!(output.unwrap(), element)
   }
+
+  #[test]
+    fn mul() {
+        for a in 0..Q {
+            for b in 0..Q {
+                let c = ((a as u32).wrapping_mul(b as u32)) % Q as u32;
+                assert_eq!(field_mul(a, b), c as u16);
+            }
+        }
+    }
 }
