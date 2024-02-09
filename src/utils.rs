@@ -237,7 +237,7 @@ pub fn inverse_ntt(f_hat: RingElement) -> RingElement {
 /// 
 /// Return value
 /// Coefficients of the NTT polynomial
-fn sample_ntt(rho: &[u8; 32], xof_i: u8, xof_j: u8) -> RingElement {
+fn sample_ntt(rho: &[u8; 32], xof_i: u8, xof_j: u8) -> Option<RingElement> {
   // Random source
   let mut xof = Shake128::default().chain(rho).chain([xof_i, xof_j]).finalize_xof();
 
@@ -266,7 +266,7 @@ fn sample_ntt(rho: &[u8; 32], xof_i: u8, xof_j: u8) -> RingElement {
     i += 3;
   }
 
-  f
+  Some(f)
 } 
 
 /// Samples the coeffcient array of a polynomial f ∈ Rq according to the
