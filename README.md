@@ -13,6 +13,7 @@ To get started with MLKEM, follow these steps:
 No dependencies are needed to build mlkem. Only prerequisites are:
 
 - Rust (tested with 1.75.0)
+- Cargo (tested with 1.75.0)
 
 ### Installation
 
