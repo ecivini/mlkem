@@ -1,5 +1,5 @@
 use crate::constants::{Q, N, ZETAS};
-use sha3::{Shake128, digest::{Update, ExtendableOutput, XofReader}};
+use sha3::{Shake128, Shake256, digest::{Update, ExtendableOutput, XofReader}};
 
 /// Element in Z_q. Since q = 3329 < 2^16, 16 bits are enough
 type FieldElement = u16;
@@ -268,6 +268,37 @@ fn sample_ntt(rho: &[u8; 32], xof_i: u8, xof_j: u8) -> RingElement {
 
   f
 } 
+
+/// Samples the coeffcient array of a polynomial f ∈ Rq according to the
+/// distribution Dη(Rq).
+/// 
+/// Arguments
+/// 
+/// 
+/// Return value
+/// Coefficients of the NTT polynomial
+fn sample_poly_cbd(eta: usize, s: &[u8; 32], b: u8) -> Option<RingElement> {
+  if eta != 2 && eta != 3 {
+    return None;
+  }
+
+  let mut xof_out = vec![0 as u8; 64 * eta];
+  Shake256::default().chain(s).chain([b]).finalize_xof_into(&mut xof_out);
+
+  let mut f: RingElement = [0 as u16; N];
+  for i in 0..N {
+    let mut x: FieldElement = 0;
+    let mut y: FieldElement = 0;
+    for j in 0..eta {
+      x += xof_out[2 * i * eta + j] as u16;
+      y += xof_out[eta * (2 * i + 1) + j] as u16;
+
+      f[i] = field_sub(x, y);
+    }
+  }
+
+  Some(f)
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
