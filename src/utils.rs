@@ -1,4 +1,5 @@
 use crate::constants::{Q, N, ZETAS};
+use sha3::{Shake128, digest::{Update, ExtendableOutput, XofReader}};
 
 /// Element in Z_q. Since q = 3329 < 2^16, 16 bits are enough
 type FieldElement = u16;
@@ -158,7 +159,6 @@ fn field_sub(a: FieldElement, b: FieldElement) -> FieldElement {
   field_reduce(a.wrapping_sub(b))
 }
 
-
 /// Computes the NTT of the given polynomial f
 /// 
 /// Arguments
@@ -229,6 +229,45 @@ pub fn inverse_ntt(f_hat: RingElement) -> RingElement {
 
   f 
 }
+
+/// Converts a stream of bytes into a polynomial in the NTT domain
+/// 
+/// Arguments
+/// bytes: byte stream
+/// 
+/// Return value
+/// Coefficients of the NTT polynomial
+fn sample_ntt(rho: &[u8; 32], xof_i: u8, xof_j: u8) -> RingElement {
+  // Random source
+  let mut xof = Shake128::default().chain(rho).chain([xof_i, xof_j]).finalize_xof();
+
+  let mut i = 0;
+  let mut j = 0;
+  let mut b = [0 as u8; 3];
+  let mut f: RingElement = [0 as FieldElement; N];
+
+  while j < N {
+    // read three bytes
+    xof.read(&mut b);
+
+    let d_1 = b[i] as u16 + N as u16 * (b[i + 1] as u16 & 0b1111);
+    let d_2 = ((b[i + 1] / 16) + 16 * b[i + 2]) as u16;
+
+    if d_1 < Q {
+      f[j] = d_1;
+      j += 1;
+    }
+
+    if d_2 < Q && j < N {
+      f[j] = d_2;
+      j += 1;
+    }
+
+    i += 3;
+  }
+
+  f
+} 
 
 ///////////////////////////////////////////////////////////////////////////////
 
