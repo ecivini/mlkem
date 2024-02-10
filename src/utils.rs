@@ -13,7 +13,7 @@ type RingElement = [FieldElement; N];
 /// bits: vector of bits. Each element must be either 0 or 1
 /// 
 /// # Return value
-/// Vector of the byte representation 
+/// Vector of the byte reprgesentation 
 fn bits_to_bytes(bits: Vec<u8>) -> Option<Vec<u8>> {
   let bits_length = bits.len();
   if bits_length % 8 != 0 {
@@ -105,6 +105,38 @@ fn byte_decode(b: &Vec<u8>, d: u8) -> Option<RingElement> {
   }
 
   Some(integers)
+}
+
+/// Compresses a RingElement
+///
+/// Arguments
+/// f: ring element
+/// d: exponent
+/// 
+/// Return value
+/// Compressed element
+fn compress(mut f: RingElement, d: u16) -> RingElement{
+  for i in 0..N {
+    f[i] = field_reduce(((1 << d) as u32 * f[i] as u32).div_ceil(Q as u32) as u16);
+  }
+
+  f 
+}
+
+/// Decompresses a RingElement
+///
+/// Arguments
+/// f: ring element
+/// d: exponent
+/// 
+/// Return value
+/// Compressed element
+fn decompress(mut f: RingElement, d: u16) -> RingElement{
+  for i in 0..N {
+    f[i] = (f[i] * Q).div_ceil(1 << d)
+  }
+
+  f 
 }
 
 /// Reduce an element into Z_q in constant time
@@ -364,10 +396,10 @@ fn kpke_key_gen(s: &[u8; 32], k: usize, eta_1: usize) -> (Vec<u8>, Vec<u8>) {
   let (rho, sigma) = g_out.split_at(32);
 
   let mut a = vec![[0; N]; k * k];
-
   for i in 0..k {
     for j in 0..k {
-      a[i * k + j] = sample_ntt(rho, i as u8, j as u8).unwrap();
+      // i and j are inverted because of a typo in the draft
+      a[i * k + j] = sample_ntt(rho, j as u8, i as u8).unwrap();
     } 
   }
 
@@ -399,6 +431,73 @@ fn kpke_key_gen(s: &[u8; 32], k: usize, eta_1: usize) -> (Vec<u8>, Vec<u8>) {
   }
 
   (e_key, d_key)
+}
+
+/// Uses the encryption key to encrypt a plaintext message using randomness r.
+/// 
+/// Arguments
+/// ek: encryption key
+/// m: encoded plaintext
+/// rand: randomness
+/// k: vectors dimension factor. 2 for ML-KEM 512, 3 for ML-KEM 768 and 
+///   4 for ML-KEM 1024.
+/// du: bits for u
+/// dv: bits for v
+/// 
+/// Return value
+/// Ciphertext
+fn kpke_encrypt(ek: Vec<u8>, m: [u8; 32], rand: [u8; 32], k: usize, eta_1: usize, eta_2: usize, du: u8, dv: u8) -> Vec<u8> {
+  let (t_encoded, rho) = ek.split_at(384 * k);
+  let mut t = vec![[0 as u16; N]; k];
+  for (i, t_at) in t_encoded.chunks_exact(384).enumerate() {
+    t[i] = byte_decode(&t_at.to_vec(), 12).unwrap();
+  }
+
+  let mut a = vec![[0; N]; k * k];
+  for i in 0..k {
+    for j in 0..k {
+      a[i * k + j] = sample_ntt(rho, i as u8, j as u8).unwrap();
+    } 
+  }
+
+  let mut r = vec![[0; N]; k];
+  let mut e = vec![[0; N]; k];
+  for i in 0..k {
+    r[i] = ntt(sample_poly_cbd(eta_1, &rand, i as u8).unwrap());
+    e[i] = sample_poly_cbd(eta_2, &rand, (k + i) as u8).unwrap();
+  }
+
+  let e_2 = sample_poly_cbd(eta_2, &rand, (2 * k) as u8).unwrap();
+
+  // A transpose mat_mul r_hat + e
+  let mut u = vec![[0; N]; k];
+  for i in 0..k {
+    u[i] = e[i];
+    for j in 0..k {
+      u[i] = poly_add(inverse_ntt(ntt_mul(a[i * k + j], r[j])), u[i]);
+    }
+  }
+
+  let mu = decompress(byte_decode(&m.to_vec(), 1).unwrap(), 1);
+
+  // t transpose mat_mul r_hat + e_2 + mu
+  let mut v = [0 as u16; N];
+  for i in 0..k {
+    v = poly_add(ntt_mul(t[i], r[i]), v);
+  }
+  v = poly_add(poly_add(inverse_ntt(v), e_2), mu);
+
+  let mut c_1 = vec![0 as u8; 32 * du as usize * k];
+  for (i, c) in c_1.chunks_exact_mut(32 * du as usize).enumerate() {
+    // Ugly as hell I know
+    c.copy_from_slice(
+        byte_encode(&compress(u[i], du as u16), du).unwrap().as_slice()
+    );
+  }
+
+  let c_2 = byte_encode(&compress(v, dv as u16), dv).unwrap();
+
+  [c_1, c_2].concat()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -449,5 +548,16 @@ mod tests {
         assert_eq!(field_mul(a, b), c as u16);
       }
     }
+  }
+
+  #[test]
+  fn test_kpke_encrypt() {
+    let s = [1 as u8; 32];
+    let (ek, dk) = kpke_key_gen(&s, 3, 2);
+
+    let m = [2 as u8; 32];
+
+    let c = kpke_encrypt(ek, m, s, 3, 2, 2, 10, 4);
+    println!("{:?}", c);
   }
 }
