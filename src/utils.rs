@@ -378,8 +378,6 @@ fn kpke_key_gen(s: &[u8; 32], k: usize, eta_1: usize) -> (Vec<u8>, Vec<u8>) {
     e[i] = ntt(sample_poly_cbd(eta_1, sigma, (k + i) as u8).unwrap());
   }
 
-  println!("s: {:?} \n\n\ne: {:?}", s, e);
-
   // A mat_mul s + e
   let mut t = vec![[0; N]; k];
   for i in 0..k {
