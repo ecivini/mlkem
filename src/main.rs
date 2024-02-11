@@ -2,6 +2,9 @@ use mlkem::mlkem::*;
 use clap::{arg, Command};
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
+use base64::{engine::general_purpose, Engine as _};
+use std::fs::File;
+use std::io::prelude::*;
 
 fn cli() -> Command {
   Command::new("mlkem")
@@ -27,8 +30,23 @@ fn keygen_and_store(key_length: u16) {
     None => panic!("Invalid key length.")
   };
 
-  println!("Encapsulation key: {:?}\n\n", ek);
-  println!("Decapsulation key: {:?}\n\n", dk);
+  let enc_file_data = "-----BEGIN ENCAPSULATION KEY-----".to_owned() + "\n\r" + 
+    &general_purpose::STANDARD.encode(&ek).to_string() + "\n\r" + 
+    "-----END ENCAPSULATION KEY-----";
+
+  let dec_file_data = "-----BEGIN DECAPSULATION KEY-----".to_owned() + "\n\r" + 
+    &general_purpose::STANDARD.encode(&dk).to_string() + "\n\r" + 
+    "-----END DECAPSULATION KEY-----";
+
+  let mut file = File::create("encapsulation.key").unwrap();
+  if file.write_all(enc_file_data.as_bytes()).is_err() {
+    println!("Unable to save encapsulation key.");
+  }
+ 
+  file = File::create("decapsulation.key").unwrap();
+  if file.write_all(dec_file_data.as_bytes()).is_err() {
+    println!("Unable to save decapsulation key.");
+  }
 }
 
 fn main() {
