@@ -107,6 +107,18 @@ fn byte_decode(b: &Vec<u8>, d: u8) -> Option<RingElement> {
   Some(integers)
 }
 
+/// Divides and rounds to the nearest integer
+/// 
+/// Arguments
+/// dividend: dividend
+/// divisor: divisor
+/// 
+/// Return value
+/// round(dividend / divisor)
+fn div_and_round(dividend: u32, divisor: u32) -> FieldElement {
+  field_reduce(((dividend + (divisor >> 1)) / divisor) as u16)
+}
+
 /// Compresses a RingElement
 ///
 /// Arguments
@@ -117,7 +129,7 @@ fn byte_decode(b: &Vec<u8>, d: u8) -> Option<RingElement> {
 /// Compressed element
 fn compress(mut f: RingElement, d: u16) -> RingElement{
   for i in 0..N {
-    f[i] = field_reduce(((1 << d) as u32 * f[i] as u32).div_ceil(Q as u32) as u16);
+    f[i] = div_and_round((1 << d) as u32 * f[i] as u32, Q as u32);
   }
 
   f 
@@ -133,7 +145,7 @@ fn compress(mut f: RingElement, d: u16) -> RingElement{
 /// Compressed element
 fn decompress(mut f: RingElement, d: u16) -> RingElement{
   for i in 0..N {
-    f[i] = (f[i] * Q).div_ceil(1 << d)
+    f[i] = div_and_round(f[i] as u32 * Q as u32, (1 << d) as u32);
   }
 
   f 
@@ -346,6 +358,22 @@ fn poly_add(mut f: RingElement, g: RingElement) -> RingElement {
   f
 }
 
+/// Subtracts two polynomials (f - g)
+/// 
+/// Arguments
+/// f: first polynomial
+/// g: second polynomial
+/// 
+/// Return value
+/// Difference of the two polynomials
+fn poly_sub(mut f: RingElement, g: RingElement) -> RingElement {
+  for i in 0..N {
+    f[i] = field_sub(f[i], g[i]);
+  }
+
+  f
+}
+
 /// Computes the product of two degree-one polynomials with respect to a 
 /// quadratic modulus.
 /// 
@@ -500,6 +528,39 @@ fn kpke_encrypt(ek: Vec<u8>, m: [u8; 32], rand: [u8; 32], k: usize, eta_1: usize
   [c_1, c_2].concat()
 }
 
+/// Decrypts a ciphertext
+/// 
+/// Arguments
+/// dk: decryption key
+/// c: ciphertext
+/// 
+/// Return value
+/// Plaintext
+fn kpke_decrypt(dk: Vec<u8>, c: Vec<u8>, k: usize, du: u8, dv: u8) -> Vec<u8> {
+  let (c_1, c_2) = c.split_at(32 * du as usize * k);
+
+  let mut u = vec![[0 as u16; N]; k];
+  for (i, chunk) in c_1.chunks_exact(32 * du as usize).enumerate() {
+    u[i] = decompress(byte_decode(&chunk.to_vec(), du).unwrap(), du as u16);
+  }
+
+  let v = decompress(byte_decode(&c_2.to_vec(), dv).unwrap(), dv as u16);
+
+  let mut s_hat = vec![[0; N]; k];
+  for (i, chunk) in dk.chunks_exact(384).enumerate() {
+    s_hat[i] = byte_decode(&chunk.to_vec(), 12).unwrap();
+  }
+
+  let mut to_sub_term = [0; N];
+  for (s, u) in s_hat.into_iter().zip(u) {
+    to_sub_term = poly_add(to_sub_term, ntt_mul(s, ntt(u)));
+  } 
+
+  let w = poly_sub(v, inverse_ntt(to_sub_term));
+
+  byte_encode(&compress(w, 1), 1).unwrap()
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]
@@ -558,6 +619,8 @@ mod tests {
     let m = [2 as u8; 32];
 
     let c = kpke_encrypt(ek, m, s, 3, 2, 2, 10, 4);
-    println!("{:?}", c);
+    let m_computed = kpke_decrypt(dk, c, 3, 10, 4);
+
+    assert_eq!(m.to_vec(), m_computed)
   }
 }
