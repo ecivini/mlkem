@@ -37,7 +37,7 @@ pub mod mlkem {
 
     dk[0..pdk_l].copy_from_slice(&pdk);
     dk[pdk_l..(pdk_l + ek_l)].copy_from_slice(&ek);
-    dk[(pdk_l + ek_l)..(pdk_l + ek_l + 32)].copy_from_slice(&Sha3_256::default().chain(ek).finalize_fixed());
+    dk[(pdk_l + ek_l)..(pdk_l + ek_l + 32)].copy_from_slice(&Sha3_256::default().chain(ek.clone()).finalize_fixed());
     dk[(pdk_l + ek_l + 32)..].copy_from_slice(&z);
 
     Some((ek, dk))
