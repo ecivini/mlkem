@@ -419,7 +419,7 @@ fn ntt_mul(f: RingElement, g: RingElement) -> RingElement {
 /// 
 /// Return value
 /// Key pair in the form of (encryption key, decryption key)
-fn kpke_key_gen(s: &[u8; 32], k: usize, eta_1: usize) -> (Vec<u8>, Vec<u8>) {
+pub fn kpke_keygen(s: &[u8; 32], k: usize, eta_1: usize) -> (Vec<u8>, Vec<u8>) {
   let g_out = sha3::Sha3_512::default().chain(s).finalize_fixed();
   let (rho, sigma) = g_out.split_at(32);
 
@@ -474,7 +474,7 @@ fn kpke_key_gen(s: &[u8; 32], k: usize, eta_1: usize) -> (Vec<u8>, Vec<u8>) {
 /// 
 /// Return value
 /// Ciphertext
-fn kpke_encrypt(ek: Vec<u8>, m: [u8; 32], rand: [u8; 32], k: usize, eta_1: usize, eta_2: usize, du: u8, dv: u8) -> Vec<u8> {
+pub fn kpke_encrypt(ek: Vec<u8>, m: [u8; 32], rand: [u8; 32], k: usize, eta_1: usize, eta_2: usize, du: u8, dv: u8) -> Vec<u8> {
   let (t_encoded, rho) = ek.split_at(384 * k);
   let mut t = vec![[0 as u16; N]; k];
   for (i, t_at) in t_encoded.chunks_exact(384).enumerate() {
@@ -536,7 +536,7 @@ fn kpke_encrypt(ek: Vec<u8>, m: [u8; 32], rand: [u8; 32], k: usize, eta_1: usize
 /// 
 /// Return value
 /// Plaintext
-fn kpke_decrypt(dk: Vec<u8>, c: Vec<u8>, k: usize, du: u8, dv: u8) -> Vec<u8> {
+pub fn kpke_decrypt(dk: Vec<u8>, c: Vec<u8>, k: usize, du: u8, dv: u8) -> Vec<u8> {
   let (c_1, c_2) = c.split_at(32 * du as usize * k);
 
   let mut u = vec![[0 as u16; N]; k];
@@ -614,7 +614,7 @@ mod tests {
   #[test]
   fn test_kpke_encrypt() {
     let s = [1 as u8; 32];
-    let (ek, dk) = kpke_key_gen(&s, 3, 2);
+    let (ek, dk) = kpke_keygen(&s, 3, 2);
 
     let m = [2 as u8; 32];
 

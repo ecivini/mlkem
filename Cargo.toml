@@ -3,5 +3,10 @@ name = "mlkem"
 version = "0.0.1"
 edition = "2021"
 
+[lib]
+name = "mlkem"
+path = "src/lib.rs"
+
 [dependencies]
 sha3 = "0.10.8"
+rand = "0.8.5"
