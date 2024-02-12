@@ -64,7 +64,7 @@ fn bytes_to_bits(bytes: Vec<u8>) -> Option<Vec<u8>> {
 /// 
 /// # Return value
 /// Encoded byte array of length 32 * d
-fn byte_encode(f: &RingElement, d: u8) -> Option<Vec<u8>> {
+pub fn byte_encode(f: &RingElement, d: u8) -> Option<Vec<u8>> {
   let mut bits: Vec<u8> = vec![0; 256 * d as usize];
 
   for i in 0..N {
@@ -87,7 +87,7 @@ fn byte_encode(f: &RingElement, d: u8) -> Option<Vec<u8>> {
 /// 
 /// Return value
 /// Array of d-bit integers
-fn byte_decode(b: &Vec<u8>, d: u8) -> Option<RingElement> {
+pub fn byte_decode(b: &Vec<u8>, d: u8) -> Option<RingElement> {
   let bits = bytes_to_bits(b.to_vec()).unwrap();
   let mut integers: RingElement = [0; N];
 
