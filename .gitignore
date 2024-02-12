@@ -80,7 +80,7 @@ tests/rustdoc-gui/src/**.lock
 
 # Before adding new lines, see the comment at the top.
 decapsulation.key
-encapsulation.
+encapsulation.key
 ciphertext.txt
 shared_dec.key
 shared_enc.key

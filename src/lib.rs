@@ -102,13 +102,11 @@ pub fn decapsulate(dk: Vec<u8>, c: Vec<u8>) -> Option<[u8; 32]> {
   // Validate dk length
   let k = (dk.len() - 96) / 768;
   if k != 2 && k != 3 && k != 4 {
-    println!("A");
     return None;
   }
 
   // Check for rounding errors
   if dk.len() != 768 * k + 96 {
-    println!("B");
     return None;
   }
 
@@ -117,7 +115,6 @@ pub fn decapsulate(dk: Vec<u8>, c: Vec<u8>) -> Option<[u8; 32]> {
 
   // Check ciphertext
   if c.len() != 32 * (du as usize * k + dv as usize) {
-    println!("C");
     return None;
   }
 

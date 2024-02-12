@@ -59,14 +59,22 @@ fn keygen_and_store(key_length: u16) {
     &general_purpose::STANDARD.encode(&dk).to_string() + "\n" + 
     "-----END DECAPSULATION KEY-----";
 
+    
+  let mut no_errors = true;
   let mut file = File::create("encapsulation.key").unwrap();
   if file.write_all(enc_file_data.as_bytes()).is_err() {
     println!("Unable to save encapsulation key.");
+    no_errors = false;
   }
  
   file = File::create("decapsulation.key").unwrap();
   if file.write_all(dec_file_data.as_bytes()).is_err() {
     println!("Unable to save decapsulation key.");
+    no_errors = false;
+  }
+  
+  if no_errors {
+    println!("Encapsulation and decapsulation keys generated correctly.\nYou can find them in encapsulation.key and decapsulation.key.");
   }
 }
 
@@ -91,14 +99,21 @@ fn read_key_and_encapsulate(path: String) {
   let b64_shared_key = general_purpose::STANDARD.encode(&shared_key).to_string();
   let b64_ciphertext = general_purpose::STANDARD.encode(&c).to_string();
 
+  let mut no_errors = true;
   let mut file = File::create("shared_enc.key").unwrap();
   if file.write_all(b64_shared_key.as_bytes()).is_err() {
     println!("Unable to save shared key.");
+    no_errors = false;
   }
 
   file = File::create("ciphertext.txt").unwrap();
   if file.write_all(b64_ciphertext.as_bytes()).is_err() {
     println!("Unable to save associated ciphertext.");
+    no_errors = false;
+  }
+
+  if no_errors {
+    println!("Shared key generated correctly.\nYou can find it in shared_enc.key");
   }
 }
 
@@ -126,6 +141,8 @@ fn read_key_and_decapsulate(dk_path: String, c_path: String) {
   let mut file = File::create("shared_dec.key").unwrap();
   if file.write_all(b64_shared_key.as_bytes()).is_err() {
     println!("Unable to save shared key.");
+  } else {
+    println!("Shared key generated correctly.\nYou can find it in shared_dec.key");
   }
 }
 
