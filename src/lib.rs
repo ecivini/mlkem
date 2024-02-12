@@ -60,17 +60,22 @@ use crate::utils::{byte_decode, byte_encode, kpke_decrypt, kpke_encrypt, kpke_ke
     // Validate key length
     let k = (ek.len() - 32) / 384;
     if k != 2 && k != 3 && k != 4 {
+      println!("A");
       return None;
     }
 
     // Check for rounding errors
     if ek.len() != 384 * k + 32 {
+      println!("B");
       return None;
     }
 
     // Check for modulus
-    if ek != byte_encode(&byte_decode(&ek, 12).unwrap(), 12).unwrap() {
-      return None;
+    for ek_chunk in ek.chunks_exact(384) {
+      if ek_chunk != byte_encode(&byte_decode(&ek_chunk.to_vec(), 12).unwrap(), 12).unwrap() {
+        println!("C");
+        return None;
+      }
     }
 
     // Parameters selection 
