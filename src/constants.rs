@@ -1,16 +1,8 @@
 /// Field order
 pub const Q: u16 = 3329;
 
-/// Bits needed to store Q
-pub const D: u16 = 12;
-
 /// Global constant
 pub const N: usize = 256;
-
-/// A primitive 256-th root of unity modulo q.
-/// This means that ζ^128 ≡ -1
-#[allow(non_upper_case_globals)]
-pub const ζ: u16 = 17;
 
 /// ζ^BitRev_7(k) mod Q for 0 <= k <= 127
 /// 

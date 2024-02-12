@@ -561,6 +561,22 @@ pub fn kpke_decrypt(dk: Vec<u8>, c: Vec<u8>, k: usize, du: u8, dv: u8) -> Vec<u8
   byte_encode(&compress(w, 1), 1).unwrap()
 }
 
+/// Returns the scheme parameters based on k
+/// 
+/// # Arguments
+/// - k: k parameter
+/// 
+/// # Return value
+/// Tuple with eta_1, eta_2, du and dv
+pub fn get_parameters(k: usize) -> (usize, usize, u8, u8) {
+  match k {
+    2 => (3, 2, 10, 4),
+    3 => (2, 2, 10, 4),
+    4 => (2, 2, 11, 5),
+    _ => (0, 0, 0, 0)
+  }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]
