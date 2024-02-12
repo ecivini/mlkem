@@ -7,11 +7,11 @@ use sha3::{digest::{FixedOutput, Update}, Sha3_256, Sha3_512};
 
 /// Generates a key pair
 ///   
-/// Arguments
-/// key_length: could 512, 768 or 1024
-/// rng: cryptpgraphically secure pseudo random number generator
+/// # Arguments
+/// - key_length: could 512, 768 or 1024  
+/// - rng: cryptographically secure PRG 
 /// 
-/// Return value
+/// # caReturn value
 /// encapsulation and decapsulation key
 pub fn keygen(key_length: u16, mut rng: impl RngCore + CryptoRng) -> Option<(Vec<u8>, Vec<u8>)> {
   let mut z = [0 as u8; 32];
@@ -45,12 +45,12 @@ pub fn keygen(key_length: u16, mut rng: impl RngCore + CryptoRng) -> Option<(Vec
 /// Uses the encapsulation key to generate a shared key and an 
 /// associated ciphertext.
 /// 
-/// Arguments
-/// ek: encapsulation key 
-/// rng: cryptographically secure pseudo random number generator
+/// # Arguments
+/// - ek: encapsulation key 
+/// - rng: cryptographically secure pseudo random number generator
 /// 
-/// Return value
-/// Tuple with the shared key K and the associated ciphertext
+/// # Return value
+/// Tuple with the shared key and the associated ciphertext
 pub fn encapsulate(ek: Vec<u8>, mut rng: impl RngCore + CryptoRng) -> Option<([u8; 32], Vec<u8>)> {
   let mut m = [0 as u8; 32];
   rng.fill_bytes(&mut m);
