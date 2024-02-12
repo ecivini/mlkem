@@ -2,6 +2,8 @@
 name = "mlkem"
 version = "0.0.1"
 edition = "2021"
+authors = ["Emanuele Civini <emanuelecivini@gmail.com>"]
+
 
 [lib]
 name = "mlkem"

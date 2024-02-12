@@ -84,3 +84,5 @@ encapsulation.key
 ciphertext.txt
 shared_dec.key
 shared_enc.key
+
+Cargo.lock
