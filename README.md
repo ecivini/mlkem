@@ -5,9 +5,10 @@
 MLKEM is an implementation of the Modular Lattice-based Key Encapsulation Mechanism (MLKEM) following the [FIPS 203 public draft](https://csrc.nist.gov/pubs/fips/203/ipd), written in Rust.
 
 ## Improvements
-[x] add support for all key length.  
-[ ] make all operations work in constant time.  
-[ ] enforce dimensions with vectors (as of now it's not as robust as it should).  
+- [x] add support for all key length.   
+- [ ] make all operations work in constant time.    
+- [ ] enforce dimensions with vectors (as of now it's not as robust as it should).  
+- [ ] improve library interface.    
 
 ## Getting Started
 
