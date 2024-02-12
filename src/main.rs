@@ -1,12 +1,10 @@
-use mlkem::mlkem::*;
+use mlkem::*;
 use clap::{arg, Command};
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
 use base64::{engine::general_purpose, Engine as _};
 use std::fs::{self, File};
 use std::io::prelude::*;
-use std::ops::Deref;
-use std::os::macos::raw;
 
 fn cli() -> Command {
   Command::new("mlkem")
