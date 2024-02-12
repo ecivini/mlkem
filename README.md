@@ -30,7 +30,7 @@ To execute MLKEM, run:
 ```
 
 ## Citations and notes
-I wanted to make this project after a live stream of [Filippo Valsorda](https://github.com/FiloSottile). Soon after, I saw that [Coda Hale](https://github.com/codahale) had already create an MLKEM768 implementation. Although there are some similarities, I have tried to make a general implementation supporting all key lengths.
+I wanted to make this project after a live stream of [Filippo Valsorda](https://github.com/FiloSottile). Soon after, I saw that [Coda Hale](https://github.com/codahale) had already made an MLKEM768 implementation. Although there are some similarities, I have tried to make a general implementation supporting all key lengths.
 As I have alreay said, this is not meant to be a library ready for production usage, it's just a personal project I wanted to make to learn a bit more about this scheme.
 
 ## License
