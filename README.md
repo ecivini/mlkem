@@ -8,15 +8,6 @@ MLKEM is an implementation of the Modular Lattice-based Key Encapsulation Mechan
 
 To get started with MLKEM, follow these steps:
 
-### Prerequisites
-
-Only prerequisites are:
-
-- Rust (tested with 1.75.0)
-- Cargo (tested with 1.75.0)
-
-Only dependency this implementation needs is SHA3 for SHAKE128.
-
 ### Installation
 
 Clone the MLKEM repository and build the project:

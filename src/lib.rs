@@ -49,7 +49,7 @@ use crate::utils::{byte_decode, byte_encode, kpke_decrypt, kpke_encrypt, kpke_ke
   /// 
   /// Arguments
   /// ek: encapsulation key 
-  /// rng: cryptpgraphically secure pseudo random number generator
+  /// rng: cryptographically secure pseudo random number generator
   /// 
   /// Return value
   /// Tuple with the shared key K and the associated ciphertext
